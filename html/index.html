@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jail Management</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- ── Police Management Panel ── -->
+    <div id="jail-panel" class="hidden">
+        <div class="panel-header">
+            <div class="header-left">
+                <svg class="shield-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                <div>
+                    <div class="panel-title" data-i18n="panel_title">JAIL MANAGEMENT</div>
+                    <div class="panel-subtitle" data-i18n="panel_subtitle">Police Terminal</div>
+                </div>
+            </div>
+            <button class="close-btn" id="close-btn" title="Close (ESC)">✕</button>
+        </div>
+
+        <div class="tab-bar">
+            <button class="tab active" data-tab="nearby">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8" stroke-dasharray="2 2"/>
+                </svg>
+                <span data-i18n="tab_nearby">Nearby Players</span>
+                <span class="tab-badge" id="nearby-count">0</span>
+            </button>
+            <button class="tab" data-tab="prisoners">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <span data-i18n="tab_prisoners">Prisoners</span>
+                <span class="tab-badge" id="prisoner-count">0</span>
+            </button>
+            <button class="tab" data-tab="log">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+                </svg>
+                <span data-i18n="tab_log">Jail Log</span>
+            </button>
+        </div>
+
+        <div class="panel-body">
+
+            <!-- ── Nearby Tab ── -->
+            <div class="tab-content active" id="tab-nearby">
+                <div class="section-header">
+                    <span class="section-label" data-i18n="section_nearby">Players within range</span>
+                    <button class="refresh-btn" id="refresh-nearby" title="Refresh">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                            <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                        </svg>
+                    </button>
+                </div>
+                <div id="nearby-list" class="player-list"></div>
+                <div id="nearby-empty" class="empty-state hidden">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40">
+                        <circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/>
+                    </svg>
+                    <p data-i18n="empty_nearby">No players within range</p>
+                </div>
+
+                <!-- Jail Form (shown on player select) -->
+                <div id="jail-form" class="jail-form hidden">
+                    <div class="form-divider"></div>
+                    <div class="form-selected-player">
+                        <div class="player-avatar large" id="form-avatar"></div>
+                        <div>
+                            <div class="form-player-name" id="form-player-name"></div>
+                            <div class="form-player-id" id="form-player-id"></div>
+                        </div>
+                    </div>
+
+                    <div id="form-already-jailed" class="form-already-jailed hidden">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                            <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        <span data-i18n="already_jailed_prefix">Already serving</span>
+                        <span id="form-existing-time"></span>
+                        — <span data-i18n="already_jailed_suffix">adding time below</span>
+                    </div>
+
+                    <div class="form-section">
+                        <label class="form-label" id="form-duration-label" data-i18n="label_duration">Sentence Duration</label>
+                        <div class="time-presets">
+                            <button class="preset-btn" data-minutes="15">15m</button>
+                            <button class="preset-btn" data-minutes="30">30m</button>
+                            <button class="preset-btn" data-minutes="60">1h</button>
+                            <button class="preset-btn" data-minutes="120">2h</button>
+                        </div>
+                        <div class="time-row">
+                            <input type="range" id="time-slider" class="time-slider" min="1" max="360" value="60">
+                            <div class="time-input-wrap">
+                                <input type="number" id="time-input" class="time-input" min="1" max="360" value="60">
+                                <span class="time-unit" data-i18n="time_unit">min</span>
+                            </div>
+                        </div>
+                        <div class="time-hint" id="time-hint">1 hour sentence</div>
+                    </div>
+
+                    <div class="form-section">
+                        <label class="form-label">
+                            <span data-i18n="label_reason">Reason</span>
+                            <span class="optional" data-i18n="label_optional">(optional)</span>
+                        </label>
+                        <input type="text" id="jail-reason" class="reason-input" data-i18n-placeholder="reason_placeholder" placeholder="e.g. Armed robbery, assault..." maxlength="100">
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn-cancel" id="form-cancel" data-i18n="btn_cancel">Cancel</button>
+                        <button class="btn-jail" id="form-jail">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                            </svg>
+                            <span id="form-jail-label" data-i18n="btn_jail">JAIL PLAYER</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Prisoners Tab ── -->
+            <div class="tab-content" id="tab-prisoners">
+                <div class="section-header">
+                    <div class="search-wrap">
+                        <input type="text" id="prisoner-search" class="search-input" data-i18n-placeholder="section_prisoners" placeholder="Search prisoners...">
+                    </div>
+                    <button class="refresh-btn" id="refresh-prisoners" title="Refresh">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                            <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                        </svg>
+                    </button>
+                </div>
+                <div id="prisoner-list" class="prisoner-list"></div>
+                <div id="prisoner-empty" class="empty-state hidden">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40">
+                        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    <p data-i18n="empty_prisoners">No prisoners currently jailed</p>
+                </div>
+            </div>
+
+            <!-- ── Log Tab ── -->
+            <div class="tab-content" id="tab-log">
+                <div class="section-header">
+                    <div class="log-filters" id="log-filters">
+                        <button class="log-filter active" data-filter="all" data-i18n="filter_all">All</button>
+                        <button class="log-filter" data-filter="jailed" data-i18n="filter_jailed">Jailed</button>
+                        <button class="log-filter" data-filter="released" data-i18n="filter_released">Released</button>
+                        <button class="log-filter" data-filter="bail" data-i18n="filter_bail">Bail</button>
+                        <button class="log-filter" data-filter="expired" data-i18n="filter_expired">Expired</button>
+                        <button class="log-filter" data-filter="extended" data-i18n="filter_extended">+Time</button>
+                    </div>
+                    <button class="refresh-btn" id="refresh-log" title="Refresh">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                            <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="log-search-row">
+                    <input type="text" id="log-search" class="search-input" data-i18n-placeholder="section_log_search" placeholder="Search by name...">
+                </div>
+                <div id="log-list" class="log-list"></div>
+                <div id="log-empty" class="empty-state hidden">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                    <p data-i18n="empty_log">No log entries found</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ── Prisoner Sentence HUD ── -->
+    <div id="prisoner-hud" class="hidden">
+        <div class="hud-top">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" class="hud-lock">
+                <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <span class="hud-label" id="hud-label" data-i18n="hud_label">SENTENCED</span>
+            <span class="hud-time" id="hud-time">--:--</span>
+        </div>
+        <div class="hud-progress-wrap">
+            <div class="hud-progress-bar" id="hud-progress-bar" style="width:100%"></div>
+        </div>
+        <div class="hud-zone-status" id="hud-zone-status">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11" class="zone-icon">
+                <circle cx="12" cy="12" r="10"/>
+                <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <span class="zone-text" id="hud-zone-text" data-i18n="zone_inside">Inside Jail Zone</span>
+        </div>
+    </div>
+
+    <!-- ── Prisoner Services Panel ── -->
+    <div id="prisoner-panel" class="hidden">
+        <div class="panel-header prison-header">
+            <div class="header-left">
+                <svg class="shield-icon prison-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <div>
+                    <div class="panel-title" data-i18n="prisoner_title">PRISONER SERVICES</div>
+                    <div class="panel-subtitle" data-i18n="prisoner_subtitle">Inmate Terminal</div>
+                </div>
+            </div>
+            <button class="close-btn" id="prisoner-close-btn" title="Close (ESC)">✕</button>
+        </div>
+
+        <div class="prison-body">
+
+            <!-- Sentence info -->
+            <div class="prison-card">
+                <div class="prison-card-label" data-i18n="sentence_label">Your Sentence</div>
+                <div class="prison-time-display" id="ps-time">--:--</div>
+                <div class="prison-bar-wrap">
+                    <div class="prison-bar-fill" id="ps-bar" style="width:100%"></div>
+                </div>
+                <div class="prison-card-sub" id="ps-sub"></div>
+            </div>
+
+            <!-- Bail -->
+            <div class="prison-card" id="bail-card">
+                <div class="prison-card-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <span data-i18n="bail_label">Bail</span>
+                </div>
+                <div class="bail-row">
+                    <div class="bail-stat">
+                        <div class="bail-value" id="bail-cost">$0</div>
+                        <div class="bail-stat-label" data-i18n="bail_amount_label">bail amount</div>
+                    </div>
+                    <div class="bail-divider"></div>
+                    <div class="bail-stat">
+                        <div class="bail-value" id="bail-balance">$0</div>
+                        <div class="bail-stat-label" data-i18n="balance_label">your balance</div>
+                    </div>
+                </div>
+                <button class="prison-btn bail-btn" id="btn-pay-bail" data-i18n="btn_pay_bail">Pay Bail &amp; Leave</button>
+            </div>
+
+            <!-- Food Ration -->
+            <div class="prison-card" id="food-card">
+                <div class="prison-card-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                        <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><line x1="7" y1="2" x2="7" y2="11"/>
+                        <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/>
+                    </svg>
+                    <span data-i18n="food_label">Daily Food Ration</span>
+                </div>
+                <div class="food-status" id="food-status" data-i18n="food_available">Available now</div>
+                <button class="prison-btn food-btn" id="btn-food" data-i18n="btn_food">Collect Ration</button>
+            </div>
+
+            <!-- Inline notification -->
+            <div class="prison-notification hidden" id="prison-notif"></div>
+
+        </div>
+    </div>
+
+    <!-- ── Release Confirm Modal ── -->
+    <div id="confirm-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-title" data-i18n="modal_title">Release Prisoner?</div>
+            <div class="modal-body" id="modal-body"></div>
+            <div class="modal-actions">
+                <button class="btn-cancel" id="modal-cancel" data-i18n="modal_cancel">Cancel</button>
+                <button class="btn-release" id="modal-confirm" data-i18n="modal_release">Release</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
